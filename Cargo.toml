@@ -1,0 +1,9 @@
+[package]
+
+name="packet"
+version="0.0.1"
+authors=["matt@mcpherrin.ca"]
+
+[[lib]]
+
+name="packet"
