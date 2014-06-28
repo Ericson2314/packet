@@ -4,7 +4,7 @@ use self::libc::{c_int, c_void, socket, AF_INET, sockaddr_storage};
 static SOCK_RAW: c_int = 3;
 static IPPROTO_ICMP: c_int = 1;
 
-struct RawSocket {
+pub struct RawSocket {
   sock: c_int
 }
 
