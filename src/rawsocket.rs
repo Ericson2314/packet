@@ -10,7 +10,7 @@ pub struct RawSocket {
 
 impl RawSocket {
 
-  fn icmp_sock() -> Option<RawSocket> {
+  pub fn icmp_sock() -> Option<RawSocket> {
     let sock = unsafe { socket(AF_INET, SOCK_RAW, IPPROTO_ICMP) };
     if sock < 0 {
       println!("{}, couldn't open.", sock);
@@ -19,7 +19,7 @@ impl RawSocket {
     Some(RawSocket{sock: sock})
   }
 
-  fn recvfrom<'buf>(&self, buf: &'buf mut [u8]) -> &'buf mut [u8] {
+  pub fn recvfrom<'buf>(&self, buf: &'buf mut [u8]) -> &'buf mut [u8] {
     let mut storage: sockaddr_storage = unsafe { std::mem::zeroed() };
     let storagep = &mut storage as *mut _ as *mut libc::sockaddr;
     let mut addrlen = std::mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
