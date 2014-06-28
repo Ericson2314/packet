@@ -5,5 +5,5 @@ version="0.0.1"
 authors=["matt@mcpherrin.ca"]
 
 [[lib]]
-
+path="src/lib.rs"
 name="packet"
