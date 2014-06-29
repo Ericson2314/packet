@@ -27,7 +27,7 @@ impl RawSocket {
                         &time as *_ as *c_void, std::mem::size_of::<timeval>() as u32) };
   }
 
-  pub fn recvfrom<'buf>(&self, buf: &'buf mut [u8]) -> &'buf mut [u8] {
+  pub fn recvfrom<'buf>(&self, buf: &'buf mut [u8]) -> Option<&'buf mut [u8]> {
     let mut storage: sockaddr_storage = unsafe { std::mem::zeroed() };
     let storagep = &mut storage as *mut _ as *mut libc::sockaddr;
     let mut addrlen = std::mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
@@ -36,7 +36,10 @@ impl RawSocket {
                    buf.as_mut_ptr() as *mut c_void,
                    buf.len() as u64, 
                    0, storagep, &mut addrlen) };
-
-    buf.mut_slice_to(bytes as uint)
+    if bytes > 0 {
+      Some(buf.mut_slice_to(bytes as uint))
+    } else {
+      None
+    }
   }
 }
