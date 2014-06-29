@@ -1,8 +1,10 @@
 extern crate std;
 extern crate libc;
-use self::libc::{c_int, c_void, socket, AF_INET, sockaddr_storage};
+use self::libc::{c_int, c_void, AF_INET, sockaddr_storage, timeval};
+use self::libc::{socket, setsockopt};
 static SOCK_RAW: c_int = 3;
 static IPPROTO_ICMP: c_int = 1;
+static SO_RCVTIMEO: c_int = 20;
 
 pub struct RawSocket {
   sock: c_int
@@ -17,6 +19,12 @@ impl RawSocket {
       return None
     }
     Some(RawSocket{sock: sock})
+  }
+
+  pub fn timeout(&self, time: i64) {
+    let time = timeval{tv_sec: time, tv_usec: 0};
+    unsafe { setsockopt(self.sock, 1, SO_RCVTIMEO,
+                        &time as *_ as *c_void, std::mem::size_of::<timeval>() as u32) };
   }
 
   pub fn recvfrom<'buf>(&self, buf: &'buf mut [u8]) -> &'buf mut [u8] {
