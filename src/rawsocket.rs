@@ -24,7 +24,7 @@ impl RawSocket {
   pub fn timeout(&self, time: i64) {
     let time = timeval{tv_sec: time, tv_usec: 0};
     unsafe { setsockopt(self.sock, 1, SO_RCVTIMEO,
-                        &time as *_ as *c_void, std::mem::size_of::<timeval>() as u32) };
+                        &time as *const _ as *const c_void, std::mem::size_of::<timeval>() as u32) };
   }
 
   pub fn recvfrom<'buf>(&self, buf: &'buf mut [u8]) -> Option<&'buf mut [u8]> {
@@ -37,7 +37,7 @@ impl RawSocket {
                    buf.len() as u64, 
                    0, storagep, &mut addrlen) };
     if bytes > 0 {
-      Some(buf.mut_slice_to(bytes as uint))
+      Some(buf.slice_to_mut(bytes as uint))
     } else {
       None
     }
