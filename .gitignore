@@ -1,1 +1,15 @@
-target
+reference
+data
+/target
+/Cargo.lock
+
+# vim tempfiles
+*.swp
+
+# emacs tempfiles
+\#*
+\#*\#
+
+# misc
+*~
+.#*
