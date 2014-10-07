@@ -12,6 +12,8 @@ impl Ip {
     Ip{buf: buf}
   }
 
+  pub fn as_vec(self) -> Vec<u8> { self.buf }
+
   pub fn version(&self) -> u8 { self.buf[0] >> 4 }
 
   pub fn hdr_len(&self) -> u8 { self.buf[0] & 0x0F }
