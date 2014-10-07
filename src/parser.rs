@@ -60,6 +60,15 @@ impl Ip {
   }
 }
 
+impl Clone for Ip {
+
+    fn clone(&self) -> Ip {
+        Ip { buf: self.buf.clone() }
+    }
+
+}
+
+
 pub struct Icmp<'a> {buf: &'a [u8] }
 
 impl<'a> Icmp<'a> {
