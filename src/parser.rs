@@ -1,10 +1,11 @@
 extern crate std;
 use std::io::net::ip::{IpAddr, Ipv4Addr};
+use std::vec::Vec;
 
-pub struct Ip<'a> {buf: &'a [u8] }
+pub struct Ip {buf: Vec<u8> }
 
-impl<'a> Ip<'a> {
-  pub fn new<'a>(buf: &'a [u8]) -> Ip<'a> {
+impl Ip {
+  pub fn new(buf: Vec<u8>) -> Ip {
     // We could do any safety-required checks here,
     // and use unsafe buffer accesses everywhere else.
     // and return Option
@@ -42,7 +43,7 @@ impl<'a> Ip<'a> {
   // Eh, todo. Iterator over IpOptions?
   //pub fn options(&self) -> ... {  }
 
-  pub fn payload(&self) -> &'a [u8] {
+  pub fn payload<'a>(&'a self) -> &'a [u8] {
     if self.total_len() as uint > self.buf.len() {
       self.buf.slice_from(self.hdr_bytes() as uint)
     } else {
