@@ -18,6 +18,14 @@ impl V {
     V { buf: buf }
   }
 
+  pub fn from_body(_ip: IpAddr, _protocol: u8, data: &[u8]) -> V {
+    static HEADER_SIZE: uint = 0;
+    let mut buf: Vec<u8> = Vec::with_capacity(data.len() + HEADER_SIZE);
+    // insert header into buf;
+    buf.push_all(data);
+    V { buf: buf }
+  }
+
   pub fn as_vec(self) -> Vec<u8> { self.buf }
 
   pub fn borrow(&self) -> &A { unsafe { transmute(self.buf.as_slice()) } }
@@ -68,32 +76,37 @@ pub struct IpStruct {
 
 #[repr(u8)]
 pub enum Precedence {
-    NetworkControl      = 0b111_00000,
-    InternetworkControl = 0b110_00000,
-    CriticEpc           = 0b101_00000,
-    FlashOverride       = 0b100_00000,
-    Flash               = 0b011_00000,
-    Immediate           = 0b010_00000,
-    Priority            = 0b001_00000,
-    Routine             = 0b000_00000,
+  NetworkControl      = 0b111_00000,
+  InternetworkControl = 0b110_00000,
+  CriticEpc           = 0b101_00000,
+  FlashOverride       = 0b100_00000,
+  Flash               = 0b011_00000,
+  Immediate           = 0b010_00000,
+  Priority            = 0b001_00000,
+  Routine             = 0b000_00000,
 }
 
 bitflags! {
-    flags ServiceFlags: u8 {
-        static LowDelay          = 0b000_100_00,
-        static HighThroughput    = 0b000_010_00,
-        static HighReliability   = 0b000_001_00,
-        //static NormalDelay       = !LowDelay       .bits,
-        //static NormalThroughput  = !HighThroughput .bits,
-        //static NormalReliability = !HighReliability.bits,
-    }
+  flags ServiceFlags: u8 {
+    #[allow(non_uppercase_statics)]
+    static LowDelay          = 0b000_100_00,
+    #[allow(non_uppercase_statics)]
+    static HighThroughput    = 0b000_010_00,
+    #[allow(non_uppercase_statics)]
+    static HighReliability   = 0b000_001_00,
+    //static NormalDelay       = !LowDelay       .bits,
+    //static NormalThroughput  = !HighThroughput .bits,
+    //static NormalReliability = !HighReliability.bits,
+  }
 }
 
 bitflags! {
-    flags IpFlags: u16 {
-        static DontFragment  = 0b010_00000_00000000,
-        static MoreFragments = 0b001_00000_00000000,
-    }
+  flags IpFlags: u16 {
+    #[allow(non_uppercase_statics)]
+    static DontFragment  = 0b010_00000_00000000,
+    #[allow(non_uppercase_statics)]
+    static MoreFragments = 0b001_00000_00000000,
+  }
 }
 
 
