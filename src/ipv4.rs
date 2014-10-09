@@ -214,8 +214,8 @@ impl A {
   pub fn print(&self) {
     println!("Ip  | ver {} | {} | Tos {} | Len {}  |",
              self.get_version(), self.get_hdr_len(), self.cast().type_of_service, self.get_total_length());
-    println!("    | FId {}    |   off {} |", self.get_identification(), self.get_flags_fragment_offset().val1());
-    println!("    | ttl {} | proto {} | sum {} |", self.get_time_to_live(), self.get_protocol(), self.get_header_checksum());
-    println!("    | Src {}   | Dst {} |", self.source(), self.dest());
+//    println!("    | FId {}    |   off {} |", self.get_identification(), self.get_flags_fragment_offset().val1());
+  //  println!("    | ttl {} | proto {} | sum {} |", self.get_time_to_live(), self.get_protocol(), self.get_header_checksum());
+    //println!("    | Src {}   | Dst {} |", self.source(), self.dest());
   }
 }
