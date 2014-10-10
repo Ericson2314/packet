@@ -236,6 +236,9 @@ impl A {
     }
   }
 
+  //TODO: this results in when actually run
+  //    task '<unknown>' has overflowed its stack
+  //    Illegal instruction (core dumped)
   pub fn print(&self) {
     println!("Ip  | ver {} | {} | Tos {} | Len {}  |",
              self.get_version(), self.get_hdr_len(), self.cast().type_of_service, self.get_total_length());
