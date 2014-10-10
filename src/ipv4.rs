@@ -193,29 +193,54 @@ impl A {
   pub fn get_header_checksum(&    self) -> u16 { Int::from_be(self.cast()    .header_checksum) }
   pub fn set_header_checksum(&mut self, v: u16)             { self.cast_mut().header_checksum = v.to_be(); }
 
-  pub fn source(&self) -> IpAddr {
+  pub fn get_source(&self) -> IpAddr {
     Ipv4Addr(self.buf[12], self.buf[13], self.buf[14], self.buf[15])
   }
+  pub fn set_source(&mut self, ip: IpAddr) -> Result<(), ()> {
+    match ip {
+      Ipv4Addr(a, b, c, d) => {
+        self.buf[12] = a;
+        self.buf[13] = b;
+        self.buf[14] = c;
+        self.buf[15] = d;
+      },
+      _ => return Err(()),
+    }
+    Ok(())
+  }
 
-  pub fn dest(&self) -> IpAddr {
+  pub fn get_destination(&self) -> IpAddr {
     Ipv4Addr(self.buf[16], self.buf[17], self.buf[18], self.buf[19])
+  }
+  pub fn set_destination(&mut self, ip: IpAddr) -> Result<(), ()> {
+    match ip {
+      Ipv4Addr(a, b, c, d) => {
+        self.buf[16] = a;
+        self.buf[17] = b;
+        self.buf[18] = c;
+        self.buf[19] = d;
+      },
+      _ => return Err(()),
+    }
+    Ok(())
   }
 
   // Eh, todo. Iterator over IpOptions?
   //pub fn options(&self) -> ... {  }
 
-  pub fn payload(&self) -> &[u8] {
+  pub fn get_payload(&self) -> &[u8] {
     if self.get_total_length() as uint > self.buf.len() {
       self.buf.slice_from(self.hdr_bytes() as uint)
     } else {
       self.buf.slice(self.hdr_bytes() as uint, self.get_total_length() as uint)
     }
   }
+
   pub fn print(&self) {
     println!("Ip  | ver {} | {} | Tos {} | Len {}  |",
              self.get_version(), self.get_hdr_len(), self.cast().type_of_service, self.get_total_length());
     println!("    | FId {}    |   off {} |", self.get_identification(), self.get_flags_fragment_offset().val1());
     println!("    | ttl {} | proto {} | sum {} |", self.get_time_to_live(), self.get_protocol(), self.get_header_checksum());
-    println!("    | Src {}   | Dst {} |", self.source(), self.dest());
+    println!("    | Src {}   | Dst {} |", self.get_source(), self.get_destination());
   }
 }
