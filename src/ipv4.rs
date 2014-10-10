@@ -19,8 +19,7 @@ impl V {
   }
 
   pub fn from_body(_ip: IpAddr, _protocol: u8, data: &[u8]) -> V {
-    static HEADER_SIZE: uint = 0;
-    let mut buf: Vec<u8> = Vec::with_capacity(data.len() + HEADER_SIZE);
+    let mut buf: Vec<u8> = Vec::with_capacity(data.len() + MIN_HDR_LEN_BYTES as uint);
     // insert header into buf;
     buf.push_all(data);
     V { buf: buf }
@@ -34,6 +33,9 @@ impl V {
 
 }
 
+pub static MIN_HDR_LEN_BITS: u32 = MIN_HDR_LEN_WORDS * 32;
+pub static MIN_HDR_LEN_BYTES: u32 = MIN_HDR_LEN_WORDS * 4;
+pub static MIN_HDR_LEN_WORDS: u32 = 5;
 
 ///   From RFC 791
 ///
