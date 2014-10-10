@@ -11,6 +11,8 @@ pub struct V { buf: Vec<u8> }
 
 pub struct A { buf:    [u8] }
 
+#[deriving(PartialEq, PartialOrd, Eq, Ord,
+           Clone, Show)]
 pub enum BadPacket {
     TooShort,
 
