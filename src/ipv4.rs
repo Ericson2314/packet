@@ -101,12 +101,15 @@ impl V {
     packet
   }
 
-  pub fn as_vec(self) -> Vec<u8> { self.buf }
+  pub fn as_vec(&self) -> &Vec<u8> { &self.buf }
+
+  pub fn as_mut_vec(&mut self) -> &mut Vec<u8> { &mut self.buf }
+
+  pub fn to_vec(self) -> Vec<u8> { self.buf }
 
   pub fn borrow(&self) -> &A { unsafe { transmute(self.buf.as_slice()) } }
 
   pub fn borrow_mut(&mut self) -> &mut A { unsafe { transmute(self.buf.as_mut_slice()) } }
-
 }
 
 pub static MIN_HDR_LEN_BITS:  u32 = MIN_HDR_LEN_WORDS as u32 * 32;
