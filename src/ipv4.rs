@@ -41,8 +41,9 @@ impl V {
                      protocol:           u8,
                      expected_body_size: Option<u16>) -> V
   {
-    let buf: Vec<u8> = Vec::with_capacity(MIN_HDR_LEN_BYTES as uint
+    let mut buf: Vec<u8> = Vec::with_capacity(MIN_HDR_LEN_BYTES as uint
                                           + expected_body_size.unwrap_or(0) as uint);
+    unsafe { buf.set_len(MIN_HDR_LEN_BYTES as uint); }
     let mut packet = V::new(buf);
     {
       let s = packet.borrow_mut();
