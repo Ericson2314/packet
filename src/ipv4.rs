@@ -79,16 +79,18 @@ impl V {
     packet
   }
 
+  // should be higher ranked liftime on closure, but that causes compiler ICE
   pub fn new_with_client
-    <Err>
+    <'clos, Err>
     (ip:                 IpAddr,
      protocol:           u8,
      expected_body_size: Option<u16>,
-     client:             |&mut V| -> Result<(), Err>) -> Result<V, Err>
+     client:             |&mut V|:'clos -> Result<(), Err>) -> Result<V, Err>
   {
     let mut packet = V::new_with_header(ip, protocol, expected_body_size);
 
     try!(client(&mut packet));
+
     let len = packet.borrow().as_slice().len() as u16;
 
     // once the new error handling libs land
