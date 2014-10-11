@@ -1,5 +1,3 @@
-extern crate std;
-
 use std::mem::transmute;
 use std::num::Int;
 use std::io::net::ip::{IpAddr, Ipv4Addr};
@@ -18,19 +16,19 @@ pub enum BadPacket {
 
     BadVersion,
     BadLength,
-    BadChecksum,
-    BadOptions,
+  BadChecksum,
+  BadOptions,
 }
 
 fn make_header_checksum(header: &[u16]) -> u16 {
   let sum = header[0..5].iter().fold(0, |a, b| a + *b) +
-            header[6..] .iter().fold(0, |a, b| a + *b);
+    header[6..] .iter().fold(0, |a, b| a + *b);
   !(sum + (sum >> 12))
 }
 
 pub fn validate(packet: &[u8]) -> Result<(), BadPacket> {
-    if packet.len() < MIN_HDR_LEN_BYTES as uint { return Err(TooShort) }
-    Ok(())
+  if packet.len() < MIN_HDR_LEN_BYTES as uint { return Err(TooShort) }
+  Ok(())
 }
 
 impl V {
@@ -38,27 +36,35 @@ impl V {
     V { buf: buf }
   }
 
-  pub fn from_body(ip: IpAddr, protocol: u8, data: &[u8]) -> V {
-    let mut buf: Vec<u8> = Vec::with_capacity(data.len() + MIN_HDR_LEN_BYTES as uint);
-    unsafe { buf.set_len(MIN_HDR_LEN_BYTES as uint); }
-    buf.push_all(data);
+  /// NOT CHECKSUMED!
+  fn new_with_header(ip:                 IpAddr,
+                     protocol:           u8,
+                     expected_body_size: Option<u16>) -> V
+  {
+    let buf: Vec<u8> = Vec::with_capacity(MIN_HDR_LEN_BYTES as uint
+                                          + expected_body_size.unwrap_or(0) as uint);
     let mut packet = V::new(buf);
     {
       let s = packet.borrow_mut();
+      static SENTINAL8:  u8  = 0b_1100_0011;
+      static SENTINAL16: u16 = 0b_1110_0000_0000_0111;
+      static SENTINAL32: u32 = 0b_1111_0000_0000_0000_0000_0000_0000_1111;
       *(s.cast_h_mut()) = IpHeaderStruct {
-        version_ihl:           4,
-        /////////////////////////////////// Internet header length
-        type_of_service:       0,    // SET LATER
-        total_length:          data.len() as u16 + MIN_HDR_LEN_BYTES,
-        identification:        9,
-        flags_fragment_offset: 0,    // SET LATER
-        /////////////////////////////////// Fragment Offset
+        version_ihl:           SENTINAL8,  // SET LATER
+        ///////////////////////////////////// Internet header length
+        type_of_service:       SENTINAL8,  // SET LATER
+        total_length:          SENTINAL16, // DO NOT SET
+        identification:        SENTINAL16,
+        flags_fragment_offset: SENTINAL16, // SET LATER
+        ///////////////////////////////////// Fragment Offset
         time_to_live:          128,
-        protocol:              protocol,   // Protocol
-        header_checksum:       0,    // SET LATER
-        source_address:        0,    // DO NOT SET
-        destination_address:   0,    // SET LATER
+        protocol:              protocol,
+        header_checksum:       SENTINAL16, // DO NOT SET
+        source_address:        SENTINAL32, // DO NOT SET
+        destination_address:   SENTINAL32, // SET LATER
       };
+      s.set_version(4);
+      s.set_header_length(MIN_HDR_LEN_WORDS);
       s.set_type_of_service(Routine, ServiceFlags::empty());
       s.set_flags_fragment_offset(DontFragment, 0);
       {
@@ -72,6 +78,29 @@ impl V {
     packet
   }
 
+  pub fn new_with_client(ip:                 IpAddr,
+                         protocol:           u8,
+                         expected_body_size: Option<u16>,
+                         client:             |&mut V| -> ()) -> V
+  {
+    let mut packet = V::new_with_header(ip, protocol, expected_body_size);
+
+    client(&mut packet);
+    let len = packet.borrow().as_slice().len() as u16;
+    assert!(len > MIN_HDR_LEN_BYTES);
+
+    // now fix header and checksum
+    {
+      let s = packet.borrow_mut();
+      s.cast_h_mut().total_length = len;
+      let u16s: &[u16] = unsafe { transmute(s.as_slice()) };
+      // slice to make sure bod is cut,
+      // and also because length is incorrect from transmute
+      s.set_header_checksum(make_header_checksum(u16s[..12]));
+    }
+    packet
+  }
+
   pub fn as_vec(self) -> Vec<u8> { self.buf }
 
   pub fn borrow(&self) -> &A { unsafe { transmute(self.buf.as_slice()) } }
@@ -80,9 +109,9 @@ impl V {
 
 }
 
-pub static MIN_HDR_LEN_BITS: u16 = MIN_HDR_LEN_WORDS * 32;
-pub static MIN_HDR_LEN_BYTES: u16 = MIN_HDR_LEN_WORDS * 4;
-pub static MIN_HDR_LEN_WORDS: u16 = 5;
+pub static MIN_HDR_LEN_BITS:  u32 = MIN_HDR_LEN_WORDS as u32 * 32;
+pub static MIN_HDR_LEN_BYTES: u16 = MIN_HDR_LEN_WORDS as u16 * 4;
+pub static MIN_HDR_LEN_WORDS: u8  = 5;
 
 ///   From RFC 791
 ///
@@ -101,7 +130,6 @@ pub static MIN_HDR_LEN_WORDS: u16 = 5;
 ///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ///   |                    Options                    |    Padding    |
 ///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 #[repr(packed)]
 #[unstable]
@@ -205,14 +233,14 @@ impl A {
     self.buf[0] |= v << 4;
   }
 
-  pub fn get_hdr_len(&self) -> u8 { self.buf[0] & 0x0F }
-  pub fn set_hdr_len(&mut self, v: u8) {
+  pub fn get_header_length(&self) -> u8 { self.buf[0] & 0x0F }
+  pub fn set_header_length(&mut self, v: u8) {
     static MASK: u8 = 0b1111_0000;
     assert!(v & MASK == 0);
     self.buf[0] |= v;
   }
 
-  pub fn hdr_bytes(&self) -> u8 { self.get_hdr_len() * 4 }
+  pub fn hdr_bytes(&self) -> u8 { self.get_header_length() * 4 }
 
   pub fn get_total_length(&    self) -> u16 { Int::from_be(self.cast_h()    .total_length) }
   pub fn set_total_length(&mut self, v: u16)             { self.cast_h_mut().total_length = v.to_be(); }
@@ -302,7 +330,7 @@ impl A {
   //    Illegal instruction (core dumped)
   pub fn print(&self) {
     println!("Ip  | ver {} | {} | Tos {} | Len {}  |",
-             self.get_version(), self.get_hdr_len(), self.cast_h().type_of_service, self.get_total_length());
+             self.get_version(), self.get_header_length(), self.cast_h().type_of_service, self.get_total_length());
     println!("    | FId {}    |   off {} |", self.get_identification(), self.get_flags_fragment_offset().val1());
     println!("    | ttl {} | proto {} | sum {} |", self.get_time_to_live(), self.get_protocol(), self.get_header_checksum());
     println!("    | Src {}   | Dst {} |", self.get_source(), self.get_destination());
