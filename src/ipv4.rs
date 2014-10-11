@@ -12,10 +12,10 @@ pub struct A { buf:    [u8] }
 #[deriving(PartialEq, PartialOrd, Eq, Ord,
            Clone, Show)]
 pub enum BadPacket {
-    TooShort,
+  TooShort,
 
-    BadVersion,
-    BadLength,
+  BadVersion,
+  BadLength,
   BadChecksum,
   BadOptions,
 }
@@ -42,14 +42,14 @@ impl V {
                      expected_body_size: Option<u16>) -> V
   {
     let mut buf: Vec<u8> = Vec::with_capacity(MIN_HDR_LEN_BYTES as uint
-                                          + expected_body_size.unwrap_or(0) as uint);
+                                              + expected_body_size.unwrap_or(0) as uint);
     unsafe { buf.set_len(MIN_HDR_LEN_BYTES as uint); }
     let mut packet = V::new(buf);
     {
       let s = packet.borrow_mut();
-      static SENTINAL8:  u8  = 0b_1100_0011;
-      static SENTINAL16: u16 = 0b_1110_0000_0000_0111;
-      static SENTINAL32: u32 = 0b_1111_0000_0000_0000_0000_0000_0000_1111;
+      const SENTINAL8:  u8  = 0b_1100_0011;
+      const SENTINAL16: u16 = 0b_1110_0000_0000_0111;
+      const SENTINAL32: u32 = 0b_1111_0000_0000_0000_0000_0000_0000_1111;
       *(s.cast_h_mut()) = IpHeaderStruct {
         version_ihl:           SENTINAL8,  // SET LATER
         ///////////////////////////////////// Internet header length
@@ -67,7 +67,7 @@ impl V {
       s.set_version(4);
       s.set_header_length(MIN_HDR_LEN_WORDS);
       s.set_type_of_service(Routine, ServiceFlags::empty());
-      s.set_flags_fragment_offset(DontFragment, 0);
+      s.set_flags_fragment_offset(DONT_FRAGMENT, 0);
       {
         let u16s: &[u16] = unsafe { transmute(s.as_slice()) };
         // slice to make sure bod is cut,
@@ -113,9 +113,9 @@ impl V {
   pub fn borrow_mut(&mut self) -> &mut A { unsafe { transmute(self.buf.as_mut_slice()) } }
 }
 
-pub static MIN_HDR_LEN_BITS:  u32 = MIN_HDR_LEN_WORDS as u32 * 32;
-pub static MIN_HDR_LEN_BYTES: u16 = MIN_HDR_LEN_WORDS as u16 * 4;
-pub static MIN_HDR_LEN_WORDS: u8  = 5;
+pub const MIN_HDR_LEN_BITS:  u32 = MIN_HDR_LEN_WORDS as u32 * 32;
+pub const MIN_HDR_LEN_BYTES: u16 = MIN_HDR_LEN_WORDS as u16 * 4;
+pub const MIN_HDR_LEN_WORDS: u8  = 5;
 
 ///   From RFC 791
 ///
@@ -172,24 +172,19 @@ pub enum Precedence {
 
 bitflags! {
   flags ServiceFlags: u8 {
-    #[allow(non_uppercase_statics)]
-    static LowDelay          = 0b000_100_00,
-    #[allow(non_uppercase_statics)]
-    static HighThroughput    = 0b000_010_00,
-    #[allow(non_uppercase_statics)]
-    static HighReliability   = 0b000_001_00,
-    //static NormalDelay       = !LowDelay       .bits,
-    //static NormalThroughput  = !HighThroughput .bits,
-    //static NormalReliability = !HighReliability.bits,
+    const LOW_DELAY         = 0b000_100_00,
+    const HIGH_THROUGHPUT   = 0b000_010_00,
+    const HIGH_RELIABILTY   = 0b000_001_00,
+    //const NORMAL_DELAY      = !LowDelay       .bits,
+    //const NORMAL_THROUGHPUT = !HighThroughput .bits,
+    //const NORMAL_RELIABILTY = !HighReliability.bits,
   }
 }
 
 bitflags! {
   flags IpFlags: u16 {
-    #[allow(non_uppercase_statics)]
-    static DontFragment  = 0b010_00000_00000000,
-    #[allow(non_uppercase_statics)]
-    static MoreFragments = 0b001_00000_00000000,
+    const DONT_FRAGMENT  = 0b010_00000_00000000,
+    const MORE_FRAGMENTS = 0b001_00000_00000000,
   }
 }
 
@@ -231,7 +226,7 @@ impl A {
 
   pub fn get_version(&self) -> u8 { self.buf[0] >> 4 }
   pub fn set_version(&mut self, v: u8) {
-    static MASK: u8 = 0b1111_0000;
+    const MASK: u8 = 0b1111_0000;
     assert!(v & MASK == 0);
     self.buf[0] &= MASK;
     self.buf[0] |= v << 4;
@@ -239,7 +234,7 @@ impl A {
 
   pub fn get_header_length(&self) -> u8 { self.buf[0] & 0x0F }
   pub fn set_header_length(&mut self, v: u8) {
-    static MASK: u8 = 0b1111_0000;
+    const MASK: u8 = 0b1111_0000;
     assert!(v & MASK == 0);
     self.buf[0] |= v;
   }
@@ -251,7 +246,7 @@ impl A {
 
 
   pub fn get_type_of_service(&self) -> (Precedence, ServiceFlags) {
-    static MASK: u8 = 0b111_00000;
+    const MASK: u8 = 0b111_00000;
     let tos = self.cast_h().type_of_service;
     ( unsafe { ::std::mem::transmute(tos & MASK) },
       ServiceFlags { bits: tos & !MASK } )
@@ -267,7 +262,7 @@ impl A {
 
   pub fn get_flags_fragment_offset(&self) -> (IpFlags, u16) {
     let ffo = self.cast_h().flags_fragment_offset;
-    static MASK: u16 = 0b111_00000_00000000;
+    const MASK: u16 = 0b111_00000_00000000;
     ( unsafe { ::std::mem::transmute(ffo & MASK) },
       ffo & !MASK)
   }
