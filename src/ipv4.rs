@@ -79,15 +79,20 @@ impl V {
     packet
   }
 
-  pub fn new_with_client(ip:                 IpAddr,
-                         protocol:           u8,
-                         expected_body_size: Option<u16>,
-                         client:             |&mut V| -> ()) -> V
+  pub fn new_with_client
+    <Err>
+    (ip:                 IpAddr,
+     protocol:           u8,
+     expected_body_size: Option<u16>,
+     client:             |&mut V| -> Result<(), Err>) -> Result<V, Err>
   {
     let mut packet = V::new_with_header(ip, protocol, expected_body_size);
 
-    client(&mut packet);
+    try!(client(&mut packet));
     let len = packet.borrow().as_slice().len() as u16;
+
+    // once the new error handling libs land
+    // this can be return Err(...) instead
     assert!(len > MIN_HDR_LEN_BYTES);
 
     // now fix header and checksum
@@ -99,7 +104,7 @@ impl V {
       // and also because length is incorrect from transmute
       s.set_header_checksum(make_header_checksum(u16s[..12]));
     }
-    packet
+    Ok(packet)
   }
 
   pub fn as_vec(&self) -> &Vec<u8> { &self.buf }
